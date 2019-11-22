@@ -65,8 +65,7 @@ CONSUL_DEMO_VERSION = ENV['CONSUL_DEMO_VERSION']
 DEMO_BOX_NAME = ENV['DEMO_BOX_NAME'] || "debian/stretch64"
 
 # Dummy constants
-CONSUL_BOOTSTRAP_HOST_WAN_1 = ""
-CONSUL_BOOTSTRAP_HOST_WAN_2 = ""
+hostip = (10..15).map { |i| "172.20.20.#{i}" }
 
 VAGRANTFILE_API_VERSION = "2"
 
@@ -78,23 +77,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   (0..5).each do |i|
     config.vm.define "n#{i}" do |node|
         node.vm.hostname = "n#{i}"
-        hostip = "172.20.20.#{10+i}"
-        CONSUL_BOOTSTRAP_HOST ||= hostip
+        CONSUL_BOOTSTRAP_HOST ||= hostip[i]
         if i % 2 == 0
           dc = "mmm"
-          CONSUL_BOOTSTRAP_HOST_1 ||= hostip
-          CONSUL_BOOTSTRAP_HOST_WAN_2 ||= hostip
+          CONSUL_BOOTSTRAP_HOST_1 ||= hostip[i]
+          CONSUL_BOOTSTRAP_HOST_WAN_2 ||= hostip[i+1]
           consul_bootstrap_host = CONSUL_BOOTSTRAP_HOST_1
           consul_bootstrap_host_wan = CONSUL_BOOTSTRAP_HOST_WAN_2
         else
           dc = "nnn"
-          CONSUL_BOOTSTRAP_HOST_2 ||= hostip
-          CONSUL_BOOTSTRAP_HOST_WAN_1 ||= hostip
+          CONSUL_BOOTSTRAP_HOST_2 ||= hostip[i]
+          CONSUL_BOOTSTRAP_HOST_WAN_1 ||= hostip[i-11]
           consul_bootstrap_host = CONSUL_BOOTSTRAP_HOST_2
           consul_bootstrap_host_wan = CONSUL_BOOTSTRAP_HOST_WAN_1
         end
-        node.vm.network "private_network", ip: hostip
-        node.vm.provision "shell", inline: $consul_systemd, env: {"CONSUL_BOOTSTRAP_HOST": consul_bootstrap_host, "CONSUL_BOOTSTRAP_HOST_WAN": consul_bootstrap_host_wan, "HOSTIP" => hostip, "DC" => dc}
+        node.vm.network "private_network", ip: hostip[i]
+        node.vm.provision "shell", inline: $consul_systemd, env: {"CONSUL_BOOTSTRAP_HOST": consul_bootstrap_host, "CONSUL_BOOTSTRAP_HOST_WAN": consul_bootstrap_host_wan, "HOSTIP" => hostip[i], "DC" => dc}
     end
   end
 
